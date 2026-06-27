@@ -10,3 +10,6 @@ class UserRepository(BaseRepository):
             .filter(User.username == username)
             .first()
         )
+
+    def user_exists(self):
+        return self.session.query(User).count() > 0
