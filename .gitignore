@@ -10,3 +10,30 @@ build/
 .vscode/
 backups/
 invoices/
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual Environment
+.venv/
+
+# Build Artifacts
+build/
+dist/
+
+# Installer Output
+installer/Output/
+
+# Executables
+*.exe
+*.msi
+
+# PyInstaller
+*.spec.bak
+
+# Logs
+*.log
+
+# VSCode
+.vscode/

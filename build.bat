@@ -1,30 +1,24 @@
 @echo off
 
-echo ======================================
-echo Cleaning old builds...
-echo ======================================
+echo =====================================
+echo Cleaning previous builds...
+echo =====================================
 
 if exist build rmdir /s /q build
 if exist dist rmdir /s /q dist
 
 echo.
-echo ======================================
+echo =====================================
 echo Building Professional Billing Software
-echo ======================================
+echo =====================================
 
 pyinstaller ^
---noconfirm ^
 --clean ^
---windowed ^
---icon=assets\icons\app.ico ^
---name="Professional Billing Software" ^
---collect-all PySide6 ^
---add-data "assets;assets" ^
---add-data "config;config" ^
-app\main.py
+main.spec
 
 echo.
-echo ======================================
+echo =====================================
 echo Build Completed
-echo ======================================
+echo =====================================
+
 pause

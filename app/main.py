@@ -8,6 +8,10 @@ from services.settings_service import (
     SettingsService,
 )
 
+from services.first_run_service import (
+    FirstRunService,
+)
+
 from ui.settings.theme_manager import (
     LIGHT_THEME,
     DARK_THEME,
@@ -17,22 +21,24 @@ from ui.auth.login_window import (
     LoginWindow,
 )
 
+from ui.onboarding.first_run_window import (
+    FirstRunWindow,
+)
+
 
 def main():
     app = QApplication(sys.argv)
 
-    # Initialize database
     initialize_database()
 
-    # Load application settings
     settings = SettingsService()
 
     theme = settings.get(
         "theme",
-        "light",
+        "dark",
     )
 
-    if theme == "dark":
+    if theme.lower() == "dark":
         app.setStyleSheet(
             DARK_THEME
         )
@@ -41,8 +47,19 @@ def main():
             LIGHT_THEME
         )
 
-    # Start application
-    window = LoginWindow()
+    first_run_service = (
+        FirstRunService()
+    )
+
+    if first_run_service.is_first_run():
+        window = (
+            FirstRunWindow()
+        )
+    else:
+        window = (
+            LoginWindow()
+        )
+
     window.show()
 
     sys.exit(app.exec())
