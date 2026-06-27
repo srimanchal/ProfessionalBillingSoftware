@@ -11,6 +11,8 @@ from PySide6.QtCore import Qt
 
 from ui.auth.login_viewmodel import LoginViewModel
 
+from ui.dashboard.dashboard_window import DashboardWindow
+
 
 class LoginWindow(QWidget):
 
@@ -81,10 +83,9 @@ class LoginWindow(QWidget):
             )
             return
 
-        QMessageBox.information(
-            self,
-            "Success",
-            f"Welcome {user.full_name}"
-        )
+        self.dashboard = DashboardWindow(user)
+        self.dashboard.show()
+
+        self.close()
 
         self.close()

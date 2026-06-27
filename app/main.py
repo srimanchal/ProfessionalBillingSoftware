@@ -11,7 +11,6 @@ from ui.company.company_window import CompanyWindow
 
 
 def main():
-
     initialize_database()
 
     auth = AuthService()
