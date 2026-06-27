@@ -37,4 +37,8 @@ class Invoice(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     customer = relationship("Customer")
-    items = relationship("InvoiceItem")
+    items = relationship(
+    "InvoiceItem",
+    back_populates="invoice",
+    cascade="all, delete-orphan"
+)

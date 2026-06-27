@@ -7,6 +7,7 @@ from sqlalchemy.orm import relationship
 from database.base import Base
 
 
+
 class InvoiceItem(Base):
     __tablename__ = "invoice_items"
 
@@ -22,3 +23,8 @@ class InvoiceItem(Base):
     total = Column(Numeric(12, 2))
 
     product = relationship("Product")
+
+    invoice = relationship(
+    "Invoice",
+    back_populates="items"
+)

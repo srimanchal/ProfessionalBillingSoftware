@@ -2,16 +2,22 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QWidget,
     QLabel,
-    QVBoxLayout,
     QHBoxLayout,
+    QVBoxLayout,
     QPushButton,
-    QFrame
+    QFrame,
+    QStackedWidget,
 )
 from PySide6.QtCore import Qt
 
-from ui.dashboard.dashboard_viewmodel import (
-    DashboardViewModel
-)
+from ui.dashboard.dashboard_viewmodel import DashboardViewModel
+
+from ui.pages.dashboard_page import DashboardPage
+from ui.pages.products_page import ProductsPage
+from ui.pages.customers_page import CustomersPage
+from ui.pages.invoices_page import InvoicesPage
+from ui.pages.reports_page import ReportsPage
+from ui.pages.settings_page import SettingsPage
 
 
 class DashboardWindow(QMainWindow):
@@ -27,31 +33,39 @@ class DashboardWindow(QMainWindow):
     def setup_ui(self):
         company = self.viewmodel.get_company()
 
-        self.setWindowTitle(
-            "Professional Billing Software"
-        )
-
+        self.setWindowTitle("Professional Billing Software")
         self.resize(1400, 800)
 
-        central = QWidget()
-        self.setCentralWidget(central)
+        # Central Widget
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
 
         main_layout = QHBoxLayout()
-        central.setLayout(main_layout)
+        central_widget.setLayout(main_layout)
 
+        #################################################
         # Sidebar
+        #################################################
+
         sidebar = QFrame()
         sidebar.setFixedWidth(250)
 
         sidebar_layout = QVBoxLayout()
 
-        title = QLabel(
+        company_name = QLabel(
             company.company_name
             if company
             else "Professional Billing Software"
         )
 
-        title.setWordWrap(True)
+        company_name.setAlignment(Qt.AlignCenter)
+        company_name.setWordWrap(True)
+
+        user_label = QLabel(
+            f"Logged in as\n{self.user.full_name}"
+        )
+
+        user_label.setAlignment(Qt.AlignCenter)
 
         dashboard_btn = QPushButton("Dashboard")
         products_btn = QPushButton("Products")
@@ -60,7 +74,8 @@ class DashboardWindow(QMainWindow):
         reports_btn = QPushButton("Reports")
         settings_btn = QPushButton("Settings")
 
-        sidebar_layout.addWidget(title)
+        sidebar_layout.addWidget(company_name)
+        sidebar_layout.addWidget(user_label)
         sidebar_layout.addSpacing(30)
 
         sidebar_layout.addWidget(dashboard_btn)
@@ -74,22 +89,60 @@ class DashboardWindow(QMainWindow):
 
         sidebar.setLayout(sidebar_layout)
 
-        # Content
-        content = QWidget()
-        content_layout = QVBoxLayout()
-        content.setLayout(content_layout)
+        #################################################
+        # Pages
+        #################################################
 
-        welcome = QLabel(
-            f"Welcome {self.user.full_name}"
+        self.stack = QStackedWidget()
+
+        self.dashboard_page = DashboardPage()
+        self.products_page = ProductsPage()
+        self.customers_page = CustomersPage()
+        self.invoices_page = InvoicesPage()
+        self.reports_page = ReportsPage()
+        self.settings_page = SettingsPage()
+
+        self.stack.addWidget(self.dashboard_page)
+        self.stack.addWidget(self.products_page)
+        self.stack.addWidget(self.customers_page)
+        self.stack.addWidget(self.invoices_page)
+        self.stack.addWidget(self.reports_page)
+        self.stack.addWidget(self.settings_page)
+
+        #################################################
+        # Button Events
+        #################################################
+
+        dashboard_btn.clicked.connect(
+            lambda: self.stack.setCurrentIndex(0)
         )
 
-        welcome.setAlignment(
-            Qt.AlignCenter
+        products_btn.clicked.connect(
+            lambda: self.stack.setCurrentIndex(1)
         )
 
-        content_layout.addStretch()
-        content_layout.addWidget(welcome)
-        content_layout.addStretch()
+        customers_btn.clicked.connect(
+            lambda: self.stack.setCurrentIndex(2)
+        )
+
+        invoices_btn.clicked.connect(
+            lambda: self.stack.setCurrentIndex(3)
+        )
+
+        reports_btn.clicked.connect(
+            lambda: self.stack.setCurrentIndex(4)
+        )
+
+        settings_btn.clicked.connect(
+            lambda: self.stack.setCurrentIndex(5)
+        )
+
+        #################################################
+        # Add Widgets To Main Layout
+        #################################################
 
         main_layout.addWidget(sidebar)
-        main_layout.addWidget(content)
+        main_layout.addWidget(self.stack)
+
+        # Default Page
+        self.stack.setCurrentIndex(0)

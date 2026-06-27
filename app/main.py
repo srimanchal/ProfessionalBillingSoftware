@@ -3,30 +3,47 @@ import sys
 from PySide6.QtWidgets import QApplication
 
 from app.startup import initialize_database
-from services.auth_service import AuthService
-from services.company_service import CompanyService
 
-from ui.auth.login_window import LoginWindow
-from ui.company.company_window import CompanyWindow
+from services.settings_service import (
+    SettingsService,
+)
+
+from ui.settings.theme_manager import (
+    LIGHT_THEME,
+    DARK_THEME,
+)
+
+from ui.auth.login_window import (
+    LoginWindow,
+)
 
 
 def main():
-    initialize_database()
-
-    auth = AuthService()
-    auth.create_default_admin()
-
     app = QApplication(sys.argv)
 
-    company_service = CompanyService()
+    # Initialize database
+    initialize_database()
 
-    if company_service.get_company() is None:
-        company_window = CompanyWindow()
-        company_window.show()
-        app.exec()
+    # Load application settings
+    settings = SettingsService()
 
-    login = LoginWindow()
-    login.show()
+    theme = settings.get(
+        "theme",
+        "light",
+    )
+
+    if theme == "dark":
+        app.setStyleSheet(
+            DARK_THEME
+        )
+    else:
+        app.setStyleSheet(
+            LIGHT_THEME
+        )
+
+    # Start application
+    window = LoginWindow()
+    window.show()
 
     sys.exit(app.exec())
 
