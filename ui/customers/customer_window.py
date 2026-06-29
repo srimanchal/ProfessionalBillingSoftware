@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
     QMessageBox,
+    QHeaderView,
 )
 
 from ui.customers.customer_viewmodel import (
@@ -16,6 +17,8 @@ from ui.customers.customer_viewmodel import (
 from ui.customers.customer_dialog import (
     CustomerDialog
 )
+
+from app.signals import app_signals
 
 
 class CustomerWindow(QWidget):
@@ -28,10 +31,24 @@ class CustomerWindow(QWidget):
         )
 
         self.setup_ui()
-
+        self.setup_signals()
         self.load_customers()
 
+    def setup_signals(self):
+        app_signals.customer_changed.connect(
+            self.load_customers
+        )
+
     def setup_ui(self):
+        self.setWindowTitle(
+            "Customers"
+        )
+
+        self.resize(
+            1000,
+            700,
+        )
+
         layout = QVBoxLayout()
 
         top_layout = QHBoxLayout()
@@ -49,6 +66,10 @@ class CustomerWindow(QWidget):
             "Delete Customer"
         )
 
+        self.refresh_button = QPushButton(
+            "Refresh"
+        )
+
         top_layout.addWidget(
             self.search_box
         )
@@ -61,9 +82,15 @@ class CustomerWindow(QWidget):
             self.delete_button
         )
 
+        top_layout.addWidget(
+            self.refresh_button
+        )
+
         self.table = QTableWidget()
 
-        self.table.setColumnCount(5)
+        self.table.setColumnCount(
+            5
+        )
 
         self.table.setHorizontalHeaderLabels(
             [
@@ -83,6 +110,47 @@ class CustomerWindow(QWidget):
             QTableWidget.NoEditTriggers
         )
 
+        self.table.verticalHeader().setVisible(
+            False
+        )
+
+        self.table.verticalHeader().setDefaultSectionSize(
+            35
+        )
+
+        self.table.setAlternatingRowColors(
+            True
+        )
+
+        header = (
+            self.table.horizontalHeader()
+        )
+
+        header.setSectionResizeMode(
+            0,
+            QHeaderView.ResizeToContents,
+        )
+
+        header.setSectionResizeMode(
+            1,
+            QHeaderView.Stretch,
+        )
+
+        header.setSectionResizeMode(
+            2,
+            QHeaderView.ResizeToContents,
+        )
+
+        header.setSectionResizeMode(
+            3,
+            QHeaderView.Stretch,
+        )
+
+        header.setSectionResizeMode(
+            4,
+            QHeaderView.ResizeToContents,
+        )
+
         layout.addLayout(
             top_layout
         )
@@ -91,7 +159,9 @@ class CustomerWindow(QWidget):
             self.table
         )
 
-        self.setLayout(layout)
+        self.setLayout(
+            layout
+        )
 
         self.add_button.clicked.connect(
             self.add_customer
@@ -99,6 +169,10 @@ class CustomerWindow(QWidget):
 
         self.delete_button.clicked.connect(
             self.delete_customer
+        )
+
+        self.refresh_button.clicked.connect(
+            self.load_customers
         )
 
         self.search_box.textChanged.connect(
@@ -110,8 +184,13 @@ class CustomerWindow(QWidget):
         )
 
     def load_customers(self):
+        if self.search_box.text().strip():
+            self.search_customers()
+            return
+
         customers = (
-            self.viewmodel.get_customers()
+            self.viewmodel
+            .get_customers()
         )
 
         self.populate_table(
@@ -120,7 +199,7 @@ class CustomerWindow(QWidget):
 
     def populate_table(
         self,
-        customers
+        customers,
     ):
         self.table.setRowCount(
             len(customers)
@@ -134,7 +213,7 @@ class CustomerWindow(QWidget):
                 0,
                 QTableWidgetItem(
                     str(customer.id)
-                )
+                ),
             )
 
             self.table.setItem(
@@ -143,7 +222,7 @@ class CustomerWindow(QWidget):
                 QTableWidgetItem(
                     customer.customer_name
                     or ""
-                )
+                ),
             )
 
             self.table.setItem(
@@ -152,7 +231,7 @@ class CustomerWindow(QWidget):
                 QTableWidgetItem(
                     customer.phone
                     or ""
-                )
+                ),
             )
 
             self.table.setItem(
@@ -161,7 +240,7 @@ class CustomerWindow(QWidget):
                 QTableWidgetItem(
                     customer.email
                     or ""
-                )
+                ),
             )
 
             self.table.setItem(
@@ -170,17 +249,14 @@ class CustomerWindow(QWidget):
                 QTableWidgetItem(
                     customer.city
                     or ""
-                )
+                ),
             )
 
-        self.table.resizeColumnsToContents()
-
     def search_customers(self):
-        text = self.search_box.text()
-
         customers = (
-            self.viewmodel.search_customers(
-                text
+            self.viewmodel
+            .search_customers(
+                self.search_box.text()
             )
         )
 
@@ -192,29 +268,13 @@ class CustomerWindow(QWidget):
         dialog = CustomerDialog()
 
         if dialog.exec():
-
-            data = {
-                "customer_name":
-                    dialog.name.text(),
-
-                "phone":
-                    dialog.phone.text(),
-
-                "email":
-                    dialog.email.text(),
-
-                "gst_number":
-                    dialog.gst.text(),
-
-                "city":
-                    dialog.city.text(),
-            }
+            data = (
+                dialog.get_data()
+            )
 
             self.viewmodel.add_customer(
                 data
             )
-
-            self.load_customers()
 
     def edit_customer(
         self,
@@ -229,7 +289,8 @@ class CustomerWindow(QWidget):
         )
 
         customer = (
-            self.viewmodel.get_customer(
+            self.viewmodel
+            .get_customer(
                 customer_id
             )
         )
@@ -242,30 +303,14 @@ class CustomerWindow(QWidget):
         )
 
         if dialog.exec():
-
-            data = {
-                "customer_name":
-                    dialog.name.text(),
-
-                "phone":
-                    dialog.phone.text(),
-
-                "email":
-                    dialog.email.text(),
-
-                "gst_number":
-                    dialog.gst.text(),
-
-                "city":
-                    dialog.city.text(),
-            }
+            data = (
+                dialog.get_data()
+            )
 
             self.viewmodel.update_customer(
                 customer_id,
-                data
+                data,
             )
-
-            self.load_customers()
 
     def delete_customer(self):
         row = (
@@ -296,9 +341,6 @@ class CustomerWindow(QWidget):
         )
 
         if result == QMessageBox.Yes:
-
             self.viewmodel.delete_customer(
                 customer_id
             )
-
-            self.load_customers()

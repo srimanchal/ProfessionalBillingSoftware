@@ -7,10 +7,18 @@ from PySide6.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
     QMessageBox,
+    QHeaderView,
 )
 
-from ui.products.product_viewmodel import ProductViewModel
-from ui.products.product_dialog import ProductDialog
+from ui.products.product_viewmodel import (
+    ProductViewModel
+)
+
+from ui.products.product_dialog import (
+    ProductDialog
+)
+
+from app.signals import app_signals
 
 
 class ProductWindow(QWidget):
@@ -21,18 +29,34 @@ class ProductWindow(QWidget):
         self.viewmodel = ProductViewModel()
 
         self.setup_ui()
+        self.setup_signals()
         self.load_products()
 
+    def setup_signals(self):
+        app_signals.product_changed.connect(
+            self.load_products
+        )
+
     def setup_ui(self):
+        self.setWindowTitle(
+            "Products"
+        )
+
+        self.resize(
+            1100,
+            700,
+        )
+
         layout = QVBoxLayout()
 
-        # ======================
+        # ==================================
         # Top Section
-        # ======================
+        # ==================================
 
         top_layout = QHBoxLayout()
 
         self.search_box = QLineEdit()
+
         self.search_box.setPlaceholderText(
             "Search products..."
         )
@@ -43,6 +67,10 @@ class ProductWindow(QWidget):
 
         self.delete_button = QPushButton(
             "Delete Product"
+        )
+
+        self.refresh_button = QPushButton(
+            "Refresh"
         )
 
         top_layout.addWidget(
@@ -57,20 +85,28 @@ class ProductWindow(QWidget):
             self.delete_button
         )
 
-        # ======================
+        top_layout.addWidget(
+            self.refresh_button
+        )
+
+        # ==================================
         # Product Table
-        # ======================
+        # ==================================
 
         self.table = QTableWidget()
 
-        self.table.setColumnCount(4)
+        self.table.setColumnCount(
+            6
+        )
 
         self.table.setHorizontalHeaderLabels(
             [
                 "ID",
                 "Product Name",
                 "SKU",
-                "Selling Price",
+                "Price",
+                "GST %",
+                "Stock",
             ]
         )
 
@@ -82,6 +118,52 @@ class ProductWindow(QWidget):
             QTableWidget.NoEditTriggers
         )
 
+        self.table.verticalHeader().setVisible(
+            False
+        )
+
+        self.table.verticalHeader().setDefaultSectionSize(
+            35
+        )
+
+        self.table.setAlternatingRowColors(
+            True
+        )
+
+        header = (
+            self.table.horizontalHeader()
+        )
+
+        header.setSectionResizeMode(
+            0,
+            QHeaderView.ResizeToContents
+        )
+
+        header.setSectionResizeMode(
+            1,
+            QHeaderView.Stretch
+        )
+
+        header.setSectionResizeMode(
+            2,
+            QHeaderView.ResizeToContents
+        )
+
+        header.setSectionResizeMode(
+            3,
+            QHeaderView.ResizeToContents
+        )
+
+        header.setSectionResizeMode(
+            4,
+            QHeaderView.ResizeToContents
+        )
+
+        header.setSectionResizeMode(
+            5,
+            QHeaderView.ResizeToContents
+        )
+
         layout.addLayout(
             top_layout
         )
@@ -90,11 +172,13 @@ class ProductWindow(QWidget):
             self.table
         )
 
-        self.setLayout(layout)
+        self.setLayout(
+            layout
+        )
 
-        # ======================
+        # ==================================
         # Events
-        # ======================
+        # ==================================
 
         self.add_button.clicked.connect(
             self.add_product
@@ -102,6 +186,10 @@ class ProductWindow(QWidget):
 
         self.delete_button.clicked.connect(
             self.delete_product
+        )
+
+        self.refresh_button.clicked.connect(
+            self.load_products
         )
 
         self.search_box.textChanged.connect(
@@ -112,11 +200,15 @@ class ProductWindow(QWidget):
             self.edit_product
         )
 
-    # ======================
+    # ==================================
     # Load Products
-    # ======================
+    # ==================================
 
     def load_products(self):
+        if self.search_box.text().strip():
+            self.search_products()
+            return
+
         products = (
             self.viewmodel.get_products()
         )
@@ -125,13 +217,13 @@ class ProductWindow(QWidget):
             products
         )
 
-    # ======================
+    # ==================================
     # Populate Table
-    # ======================
+    # ==================================
 
     def populate_table(
         self,
-        products
+        products,
     ):
         self.table.setRowCount(
             len(products)
@@ -140,6 +232,7 @@ class ProductWindow(QWidget):
         for row, product in enumerate(
             products
         ):
+
             self.table.setItem(
                 row,
                 0,
@@ -177,18 +270,36 @@ class ProductWindow(QWidget):
                 ),
             )
 
-        self.table.resizeColumnsToContents()
+            self.table.setItem(
+                row,
+                4,
+                QTableWidgetItem(
+                    str(
+                        product.gst_percentage
+                        or 0
+                    )
+                ),
+            )
 
-    # ======================
+            self.table.setItem(
+                row,
+                5,
+                QTableWidgetItem(
+                    str(
+                        product.stock_quantity
+                        or 0
+                    )
+                ),
+            )
+
+    # ==================================
     # Search Products
-    # ======================
+    # ==================================
 
     def search_products(self):
-        text = self.search_box.text()
-
         products = (
             self.viewmodel.search_products(
-                text
+                self.search_box.text()
             )
         )
 
@@ -196,44 +307,26 @@ class ProductWindow(QWidget):
             products
         )
 
-    # ======================
+    # ==================================
     # Add Product
-    # ======================
+    # ==================================
 
     def add_product(self):
         dialog = ProductDialog()
 
         if dialog.exec():
 
-            data = {
-                "product_name":
-                    dialog.name.text(),
-
-                "sku":
-                    dialog.sku.text(),
-
-                "selling_price":
-                    float(
-                        dialog.price.text()
-                        or 0
-                    ),
-
-                "stock_quantity":
-                    float(
-                        dialog.stock.text()
-                        or 0
-                    ),
-            }
+            data = (
+                dialog.get_data()
+            )
 
             self.viewmodel.add_product(
                 data
             )
 
-            self.load_products()
-
-    # ======================
+    # ==================================
     # Edit Product
-    # ======================
+    # ==================================
 
     def edit_product(
         self,
@@ -262,36 +355,18 @@ class ProductWindow(QWidget):
 
         if dialog.exec():
 
-            data = {
-                "product_name":
-                    dialog.name.text(),
-
-                "sku":
-                    dialog.sku.text(),
-
-                "selling_price":
-                    float(
-                        dialog.price.text()
-                        or 0
-                    ),
-
-                "stock_quantity":
-                    float(
-                        dialog.stock.text()
-                        or 0
-                    ),
-            }
+            data = (
+                dialog.get_data()
+            )
 
             self.viewmodel.update_product(
                 product_id,
                 data,
             )
 
-            self.load_products()
-
-    # ======================
+    # ==================================
     # Delete Product
-    # ======================
+    # ==================================
 
     def delete_product(self):
         row = (
@@ -326,5 +401,3 @@ class ProductWindow(QWidget):
             self.viewmodel.delete_product(
                 product_id
             )
-
-            self.load_products()

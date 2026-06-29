@@ -22,6 +22,23 @@ from app.constants import (
 
 class PDFService:
 
+    def get_safe_filename(
+        self,
+        invoice_number,
+    ):
+        return (
+            invoice_number
+            .replace("/", "-")
+            .replace("\\", "-")
+            .replace(":", "-")
+            .replace("*", "")
+            .replace("?", "")
+            .replace('"', "")
+            .replace("<", "")
+            .replace(">", "")
+            .replace("|", "")
+        )
+
     def generate_invoice(
         self,
         company,
@@ -49,9 +66,15 @@ class PDFService:
             exist_ok=True,
         )
 
+        safe_invoice_number = (
+            self.get_safe_filename(
+                invoice.invoice_number
+            )
+        )
+
         pdf_path = (
             invoice_dir
-            / f"{invoice.invoice_number}.pdf"
+            / f"{safe_invoice_number}.pdf"
         )
 
         doc = SimpleDocTemplate(
@@ -67,9 +90,9 @@ class PDFService:
 
         elements = []
 
-        # =================================
-        # COMPANY HEADER
-        # =================================
+        # ==========================
+        # Company Header
+        # ==========================
 
         logo = ""
 
@@ -84,7 +107,7 @@ class PDFService:
                     height=35 * mm,
                 )
             except:
-                logo = ""
+                pass
 
         company_details = f"""
         <b>{company.company_name}</b><br/>
@@ -92,7 +115,7 @@ class PDFService:
         {company.city or ''}, {company.state or ''}<br/>
         GSTIN : {company.gst_number or ''}<br/>
         Phone : {company.phone or ''}<br/>
-        Email : {company.email or ''}<br/>
+        Email : {company.email or ''}
         """
 
         header = Table(
@@ -119,48 +142,40 @@ class PDFService:
             Spacer(1, 15)
         )
 
-        # =================================
-        # INVOICE TITLE
-        # =================================
-
-        title = Paragraph(
-            "<b> TAX INVOICE </b>",
-            styles["Title"],
+        elements.append(
+            Paragraph(
+                "<b>TAX INVOICE</b>",
+                styles["Title"],
+            )
         )
 
         elements.append(
-            title
+            Spacer(1, 15)
         )
 
-        elements.append(
-            Spacer(1, 10)
-        )
-
-        # =================================
-        # BILL TO + INVOICE DETAILS
-        # =================================
-
-        customer_data = [
-            [
-                "Bill To",
-                "Invoice Details",
-            ],
-            [
-                customer.customer_name,
-                f"Invoice No : {invoice.invoice_number}",
-            ],
-            [
-                customer.phone or "",
-                f"Date : {invoice.invoice_date.strftime('%d-%m-%Y')}",
-            ],
-            [
-                customer.address or "",
-                f"Payment Status : {invoice.payment_status or ''}",
-            ],
-        ]
+        # ==========================
+        # Customer Details
+        # ==========================
 
         customer_table = Table(
-            customer_data,
+            [
+                [
+                    "Bill To",
+                    "Invoice Details",
+                ],
+                [
+                    customer.customer_name,
+                    f"Invoice No : {invoice.invoice_number}",
+                ],
+                [
+                    customer.phone or "",
+                    f"Date : {invoice.invoice_date.strftime('%d-%m-%Y')}",
+                ],
+                [
+                    customer.address or "",
+                    f"Status : {invoice.payment_status}",
+                ],
+            ],
             colWidths=[
                 90 * mm,
                 90 * mm,
@@ -195,56 +210,64 @@ class PDFService:
             Spacer(1, 15)
         )
 
-        # =================================
-        # ITEMS TABLE
-        # =================================
+        # ==========================
+        # Items Table
+        # ==========================
 
         rows = [
             [
                 "Sl",
-                "Description",
+                "Product",
                 "Qty",
                 "Rate",
-                "Discount",
+                "GST %",
                 "GST",
-                "Amount",
+                "Total",
             ]
         ]
 
-        count = 1
+        taxable_total = 0
+        gst_total = 0
 
-        for item in items:
+        for index, item in enumerate(
+            items,
+            start=1,
+        ):
+            taxable_total += float(
+                item.taxable_amount
+            )
+
+            gst_total += float(
+                item.gst_amount
+            )
+
             rows.append(
                 [
-                    str(count),
+                    str(index),
                     item.product.product_name,
                     str(item.quantity),
                     str(item.rate),
                     str(
-                        item.discount
-                        or 0
+                        item.gst_percentage
                     ),
                     str(
-                        item.tax
-                        or 0
+                        item.gst_amount
                     ),
                     str(item.total),
                 ]
             )
-
-            count += 1
 
         item_table = Table(
             rows,
             repeatRows=1,
             colWidths=[
                 15 * mm,
-                65 * mm,
+                60 * mm,
+                20 * mm,
+                25 * mm,
                 20 * mm,
                 25 * mm,
                 25 * mm,
-                20 * mm,
-                30 * mm,
             ],
         )
 
@@ -284,42 +307,39 @@ class PDFService:
             Spacer(1, 15)
         )
 
-        # =================================
-        # TOTALS
-        # =================================
+        cgst = gst_total / 2
+        sgst = gst_total / 2
 
-        totals = [
+        gst_table = Table(
             [
-                "Subtotal",
-                str(invoice.subtotal),
+                [
+                    "Taxable Amount",
+                    f"{taxable_total:.2f}",
+                ],
+                [
+                    "CGST",
+                    f"{cgst:.2f}",
+                ],
+                [
+                    "SGST",
+                    f"{sgst:.2f}",
+                ],
+                [
+                    "Total GST",
+                    f"{gst_total:.2f}",
+                ],
+                [
+                    "Grand Total",
+                    f"{float(invoice.grand_total):.2f}",
+                ],
             ],
-            [
-                "Discount",
-                str(invoice.discount),
-            ],
-            [
-                "Tax",
-                str(invoice.tax),
-            ],
-            [
-                "Round Off",
-                str(invoice.round_off),
-            ],
-            [
-                "Grand Total",
-                str(invoice.grand_total),
-            ],
-        ]
-
-        totals_table = Table(
-            totals,
             colWidths=[
                 120 * mm,
                 50 * mm,
             ],
         )
 
-        totals_table.setStyle(
+        gst_table.setStyle(
             TableStyle(
                 [
                     (
@@ -340,109 +360,7 @@ class PDFService:
         )
 
         elements.append(
-            totals_table
-        )
-
-        elements.append(
-            Spacer(1, 15)
-        )
-
-        # =================================
-        # BANK DETAILS
-        # =================================
-
-        if company.bank_name:
-
-            bank_text = f"""
-            <b>Bank Details</b><br/>
-            Bank : {company.bank_name}<br/>
-            Account : {company.bank_account}<br/>
-            IFSC : {company.ifsc_code}<br/>
-            UPI : {company.upi_id}
-            """
-
-            elements.append(
-                Paragraph(
-                    bank_text,
-                    styles["Normal"],
-                )
-            )
-
-            elements.append(
-                Spacer(1, 15)
-            )
-
-        # =================================
-        # TERMS
-        # =================================
-
-        if company.terms_conditions:
-
-            elements.append(
-                Paragraph(
-                    "<b>Terms & Conditions</b>",
-                    styles["Heading3"],
-                )
-            )
-
-            elements.append(
-                Paragraph(
-                    company.terms_conditions,
-                    styles["Normal"],
-                )
-            )
-
-            elements.append(
-                Spacer(1, 15)
-            )
-
-        # =================================
-        # SIGNATURE
-        # =================================
-
-        if company.signature_path:
-
-            try:
-                sign = Image(
-                    company.signature_path,
-                    width=40 * mm,
-                    height=20 * mm,
-                )
-
-                elements.append(
-                    sign
-                )
-
-            except:
-                pass
-
-        elements.append(
-            Paragraph(
-                "Authorized Signatory",
-                styles["Normal"],
-            )
-        )
-
-        elements.append(
-            Spacer(1, 20)
-        )
-
-        # =================================
-        # FOOTER
-        # =================================
-
-        elements.append(
-            Paragraph(
-                "Thank you for your business.",
-                styles["Normal"],
-            )
-        )
-
-        elements.append(
-            Paragraph(
-                "This is a computer generated invoice.",
-                styles["Normal"],
-            )
+            gst_table
         )
 
         doc.build(

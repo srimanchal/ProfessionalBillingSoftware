@@ -1,52 +1,32 @@
-LIGHT_THEME = """
-QWidget {
-    background-color: #f5f5f5;
-    color: #222222;
-}
+from services.settings_service import (
+    SettingsService
+)
 
-QPushButton {
-    background-color: #2d89ef;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 8px;
-}
+from ui.themes.dark_theme import (
+    DARK_THEME
+)
 
-QLineEdit,
-QComboBox,
-QTableWidget,
-QListWidget {
-    background: white;
-    color: black;
-    border: 1px solid #cccccc;
-    border-radius: 6px;
-    padding: 6px;
-}
-"""
+from ui.themes.light_theme import (
+    LIGHT_THEME
+)
 
 
-DARK_THEME = """
-QWidget {
-    background-color: #1e1e1e;
-    color: white;
-}
+class ThemeManager:
 
-QPushButton {
-    background-color: #0078d7;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 8px;
-}
+    @staticmethod
+    def apply(app):
+        settings = SettingsService()
 
-QLineEdit,
-QComboBox,
-QTableWidget,
-QListWidget {
-    background-color: #2b2b2b;
-    color: white;
-    border: 1px solid #444444;
-    border-radius: 6px;
-    padding: 6px;
-}
-"""
+        theme = settings.get(
+            "theme",
+            "dark"
+        )
+
+        if theme == "dark":
+            app.setStyleSheet(
+                DARK_THEME
+            )
+        else:
+            app.setStyleSheet(
+                LIGHT_THEME
+            )

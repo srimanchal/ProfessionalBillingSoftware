@@ -41,6 +41,17 @@ class CustomerViewModel:
             )
         )
 
+    def get_customer_by_phone(
+        self,
+        phone,
+    ):
+        return (
+            self.service
+            .get_customer_by_phone(
+                phone
+            )
+        )
+
     def update_customer(
         self,
         customer_id,

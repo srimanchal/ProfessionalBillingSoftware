@@ -5,11 +5,11 @@ from PySide6.QtWidgets import (
 )
 
 from ui.settings.settings_window import (
-    SettingsWindow
+    SettingsWindow,
 )
 
 from ui.settings.backup_window import (
-    BackupWindow
+    BackupWindow,
 )
 
 
@@ -18,22 +18,39 @@ class SettingsPage(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.setup_ui()
+
+    def setup_ui(self):
+
         layout = QVBoxLayout()
 
-        tabs = QTabWidget()
-
-        tabs.addTab(
-            SettingsWindow(),
-            "General"
+        layout.setContentsMargins(
+            20,
+            20,
+            20,
+            20,
         )
 
-        tabs.addTab(
+        self.tabs = QTabWidget()
+
+        self.tabs.setDocumentMode(
+            True
+        )
+
+        self.tabs.addTab(
+            SettingsWindow(),
+            "General",
+        )
+
+        self.tabs.addTab(
             BackupWindow(),
-            "Backup"
+            "Backup",
         )
 
         layout.addWidget(
-            tabs
+            self.tabs
         )
 
-        self.setLayout(layout)
+        self.setLayout(
+            layout
+        )

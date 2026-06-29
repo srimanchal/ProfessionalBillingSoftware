@@ -1,12 +1,51 @@
-from database.repositories.base_repository import BaseRepository
-from database.models.settings import Settings
+from database.models.settings import (
+    Setting
+)
 
 
-class SettingsRepository(BaseRepository):
+class SettingsRepository:
 
-    def get_setting(self, key):
+    def __init__(
+        self,
+        db,
+    ):
+        self.db = db
+
+    def get(
+        self,
+        key,
+    ):
         return (
-            self.session.query(Settings)
-            .filter(Settings.key == key)
+            self.db.query(Setting)
+            .filter(
+                Setting.key == key
+            )
             .first()
         )
+
+    def set(
+        self,
+        key,
+        value,
+    ):
+        setting = self.get(
+            key
+        )
+
+        if setting:
+            setting.value = str(
+                value
+            )
+        else:
+            setting = Setting(
+                key=key,
+                value=str(value),
+            )
+
+            self.db.add(
+                setting
+            )
+
+        self.db.commit()
+
+        return setting

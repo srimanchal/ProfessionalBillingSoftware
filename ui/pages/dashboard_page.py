@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QFrame,
     QTableWidget,
     QTableWidgetItem,
+    QHeaderView,
 )
 
 from PySide6.QtGui import (
@@ -24,6 +25,10 @@ from ui.dashboard.dashboard_analytics_viewmodel import (
     DashboardAnalyticsViewModel,
 )
 
+from app.signals import (
+    app_signals,
+)
+
 
 class DashboardPage(QWidget):
 
@@ -39,6 +44,34 @@ class DashboardPage(QWidget):
         )
 
         self.setup_ui()
+        self.setup_signals()
+
+    ########################################################
+    # Signals
+    ########################################################
+
+    def setup_signals(self):
+        app_signals.dashboard_refresh.connect(
+            self.refresh_dashboard
+        )
+
+    ########################################################
+    # Dashboard Refresh
+    ########################################################
+
+    def refresh_dashboard(self):
+        old_layout = self.layout()
+
+        if old_layout:
+            QWidget().setLayout(
+                old_layout
+            )
+
+        self.setup_ui()
+
+    ########################################################
+    # Company Header
+    ########################################################
 
     def create_company_header(self):
 
@@ -47,23 +80,29 @@ class DashboardPage(QWidget):
         )
 
         header = QFrame()
-
-        header.setStyleSheet("""
-            QFrame{
-                background-color:#ffffff;
-                border:1px solid #dcdcdc;
-                border-radius:15px;
-                padding:20px;
-            }
-        """)
+        header.setObjectName(
+            "DashboardHeader"
+        )
 
         layout = QGridLayout()
 
-        # ==========================
+        layout.setContentsMargins(
+            25,
+            25,
+            25,
+            25,
+        )
+
+        layout.setHorizontalSpacing(
+            30
+        )
+
+        ####################################################
         # Logo
-        # ==========================
+        ####################################################
 
         logo_label = QLabel()
+
         logo_label.setFixedSize(
             120,
             120,
@@ -75,15 +114,13 @@ class DashboardPage(QWidget):
 
         if (
             company
-            and
-            company.logo_path
+            and company.logo_path
         ):
             pixmap = QPixmap(
                 company.logo_path
             )
 
             if not pixmap.isNull():
-
                 pixmap = pixmap.scaled(
                     100,
                     100,
@@ -95,9 +132,9 @@ class DashboardPage(QWidget):
                     pixmap
                 )
 
-        # ==========================
+        ####################################################
         # Company Details
-        # ==========================
+        ####################################################
 
         details_layout = QVBoxLayout()
 
@@ -107,10 +144,9 @@ class DashboardPage(QWidget):
             else "Professional Billing Software"
         )
 
-        company_name.setStyleSheet("""
-            font-size:26px;
-            font-weight:bold;
-        """)
+        company_name.setObjectName(
+            "DashboardCompanyName"
+        )
 
         details_layout.addWidget(
             company_name
@@ -118,37 +154,23 @@ class DashboardPage(QWidget):
 
         if company:
 
-            gst = QLabel(
-                f"GSTIN : {company.gst_number or ''}"
-            )
+            labels = [
+                f"GSTIN : {company.gst_number or ''}",
+                f"Phone : {company.phone or ''}",
+                f"Email : {company.email or ''}",
+                f"{company.address or ''}",
+            ]
 
-            phone = QLabel(
-                f"Phone : {company.phone or ''}"
-            )
+            for text in labels:
+                lbl = QLabel(text)
+                lbl.setObjectName(
+                    "DashboardText"
+                )
+                details_layout.addWidget(
+                    lbl
+                )
 
-            email = QLabel(
-                f"Email : {company.email or ''}"
-            )
-
-            address = QLabel(
-                f"{company.address or ''}"
-            )
-
-            details_layout.addWidget(
-                gst
-            )
-
-            details_layout.addWidget(
-                phone
-            )
-
-            details_layout.addWidget(
-                email
-            )
-
-            details_layout.addWidget(
-                address
-            )
+        details_layout.addStretch()
 
         layout.addWidget(
             logo_label,
@@ -168,22 +190,24 @@ class DashboardPage(QWidget):
 
         return header
 
+    ########################################################
+    # Dashboard Cards
+    ########################################################
+
     def create_card(
         self,
         title,
         value,
     ):
-
         card = QFrame()
 
-        card.setStyleSheet("""
-            QFrame{
-                background-color:#ffffff;
-                border:1px solid #dcdcdc;
-                border-radius:15px;
-                padding:15px;
-            }
-        """)
+        card.setObjectName(
+            "DashboardCard"
+        )
+
+        card.setMinimumHeight(
+            130
+        )
 
         layout = QVBoxLayout()
 
@@ -191,25 +215,23 @@ class DashboardPage(QWidget):
             title
         )
 
-        title_label.setStyleSheet("""
-            color:#666666;
-            font-size:14px;
-            font-weight:bold;
-        """)
+        title_label.setObjectName(
+            "DashboardCardTitle"
+        )
 
         value_label = QLabel(
             str(value)
         )
 
-        value_label.setStyleSheet("""
-            color:#000000;
-            font-size:30px;
-            font-weight:bold;
-        """)
+        value_label.setObjectName(
+            "DashboardCardValue"
+        )
 
         layout.addWidget(
             title_label
         )
+
+        layout.addStretch()
 
         layout.addWidget(
             value_label
@@ -221,141 +243,201 @@ class DashboardPage(QWidget):
 
         return card
 
+    ########################################################
+    # UI
+    ########################################################
+
     def setup_ui(self):
 
         layout = QVBoxLayout()
 
-        # ==========================
+        layout.setContentsMargins(
+            20,
+            20,
+            20,
+            20,
+        )
+
+        layout.setSpacing(
+            20
+        )
+
+        ####################################################
         # Company Header
-        # ==========================
+        ####################################################
 
         layout.addWidget(
             self.create_company_header()
         )
 
-        # ==========================
+        ####################################################
         # Dashboard Cards
-        # ==========================
+        ####################################################
 
         grid = QGridLayout()
+        grid.setSpacing(
+            20
+        )
 
-        grid.addWidget(
-            self.create_card(
+        cards = [
+            (
                 "Products",
                 self.viewmodel.get_total_products(),
             ),
-            0,
-            0,
-        )
-
-        grid.addWidget(
-            self.create_card(
+            (
                 "Customers",
                 self.viewmodel.get_total_customers(),
             ),
-            0,
-            1,
-        )
-
-        grid.addWidget(
-            self.create_card(
+            (
                 "Invoices",
                 self.viewmodel.get_total_invoices(),
             ),
-            0,
-            2,
-        )
-
-        grid.addWidget(
-            self.create_card(
+            (
                 "Today's Sales",
                 self.viewmodel.get_today_sales(),
             ),
-            1,
-            0,
-        )
-
-        grid.addWidget(
-            self.create_card(
+            (
                 "Monthly Sales",
                 self.viewmodel.get_month_sales(),
             ),
-            1,
-            1,
-        )
-
-        grid.addWidget(
-            self.create_card(
+            (
                 "Low Stock",
                 len(
-                    self.viewmodel.get_low_stock_products()
+                    self.viewmodel
+                    .get_low_stock_products()
                 ),
             ),
-            1,
-            2,
-        )
+        ]
+
+        row = 0
+        col = 0
+
+        for title, value in cards:
+
+            grid.addWidget(
+                self.create_card(
+                    title,
+                    value,
+                ),
+                row,
+                col,
+            )
+
+            col += 1
+
+            if col > 2:
+                col = 0
+                row += 1
 
         layout.addLayout(
             grid
         )
 
-        # ==========================
-        # Sales Chart
-        # ==========================
+        ####################################################
+        # Monthly Sales Chart
+        ####################################################
+
+        chart_frame = QFrame()
+
+        chart_frame.setObjectName(
+            "DashboardCard"
+        )
+
+        chart_layout = QVBoxLayout()
 
         chart_title = QLabel(
             "Monthly Sales"
         )
 
-        chart_title.setStyleSheet("""
-            font-size:18px;
-            font-weight:bold;
-        """)
+        chart_title.setObjectName(
+            "DashboardSectionTitle"
+        )
 
-        layout.addWidget(
+        chart_layout.addWidget(
             chart_title
         )
 
-        chart = pg.PlotWidget()
+        self.chart = pg.PlotWidget()
 
-        chart.setBackground(
-            "w"
+        self.chart.setMinimumHeight(
+            320
         )
+
+        self.chart.showGrid(
+            x=True,
+            y=True,
+            alpha=0.3,
+        )
+
+        self.chart.setMouseEnabled(
+            x=False,
+            y=False,
+        )
+
+        self.chart.getPlotItem().hideButtons()
 
         sales = (
             self.viewmodel
             .get_monthly_sales_chart()
         )
 
-        chart.plot(
+        self.chart.plot(
             sales,
-            pen="b",
+            pen=pg.mkPen(
+                width=3
+            ),
             symbol="o",
+            symbolSize=8,
+        )
+
+        chart_layout.addWidget(
+            self.chart
+        )
+
+        chart_frame.setLayout(
+            chart_layout
         )
 
         layout.addWidget(
-            chart
+            chart_frame
         )
 
-        # ==========================
+        ####################################################
         # Recent Invoices
-        # ==========================
+        ####################################################
+
+        table_frame = QFrame()
+
+        table_frame.setObjectName(
+            "DashboardCard"
+        )
+
+        table_layout = QVBoxLayout()
 
         recent_label = QLabel(
             "Recent Invoices"
         )
 
-        recent_label.setStyleSheet("""
-            font-size:18px;
-            font-weight:bold;
-        """)
+        recent_label.setObjectName(
+            "DashboardSectionTitle"
+        )
 
-        layout.addWidget(
+        table_layout.addWidget(
             recent_label
         )
 
-        self.table = (
-            QTableWidget()
+        self.table = QTableWidget()
+
+        self.table.setMinimumHeight(
+            350
+        )
+
+        self.table.verticalHeader().setVisible(
+            False
+        )
+
+        self.table.setAlternatingRowColors(
+            True
         )
 
         self.table.setColumnCount(
@@ -368,6 +450,14 @@ class DashboardPage(QWidget):
                 "Customer ID",
                 "Total",
             ]
+        )
+
+        header = (
+            self.table.horizontalHeader()
+        )
+
+        header.setSectionResizeMode(
+            QHeaderView.Stretch
         )
 
         invoices = (
@@ -410,8 +500,16 @@ class DashboardPage(QWidget):
                 ),
             )
 
-        layout.addWidget(
+        table_layout.addWidget(
             self.table
+        )
+
+        table_frame.setLayout(
+            table_layout
+        )
+
+        layout.addWidget(
+            table_frame
         )
 
         self.setLayout(

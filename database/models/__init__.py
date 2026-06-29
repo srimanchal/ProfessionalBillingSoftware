@@ -5,8 +5,9 @@ from .product import Product
 from .invoice import Invoice
 from .invoice_item import InvoiceItem
 from .payment import Payment
-from .settings import Settings
+from .settings import Setting
 from .vendor import Vendor
 from .expense import Expense
 from .stock_movement import StockMovement
 from .backup import Backup
+from database.models.settings import Setting

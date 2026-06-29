@@ -5,11 +5,11 @@ from PySide6.QtWidgets import (
 )
 
 from ui.invoices.invoice_window import (
-    InvoiceWindow
+    InvoiceWindow,
 )
 
 from ui.invoices.invoice_history_window import (
-    InvoiceHistoryWindow
+    InvoiceHistoryWindow,
 )
 
 
@@ -18,20 +18,43 @@ class InvoicesPage(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.setup_ui()
+
+    def setup_ui(self):
+
         layout = QVBoxLayout()
 
-        tabs = QTabWidget()
+        layout.setContentsMargins(
+            20,
+            20,
+            20,
+            20,
+        )
 
-        tabs.addTab(
+        self.tabs = QTabWidget()
+
+        self.tabs.setDocumentMode(
+            True
+        )
+
+        self.tabs.setMovable(
+            False
+        )
+
+        self.tabs.addTab(
             InvoiceWindow(),
-            "Create Invoice"
+            "Create Invoice",
         )
 
-        tabs.addTab(
+        self.tabs.addTab(
             InvoiceHistoryWindow(),
-            "Invoice History"
+            "Invoice History",
         )
 
-        layout.addWidget(tabs)
+        layout.addWidget(
+            self.tabs
+        )
 
-        self.setLayout(layout)
+        self.setLayout(
+            layout
+        )

@@ -1,9 +1,15 @@
+from sqlalchemy import or_
+
 from database.repositories.base_repository import (
     BaseRepository
 )
 
 from database.models.invoice import (
     Invoice
+)
+
+from database.models.customer import (
+    Customer
 )
 
 
@@ -17,6 +23,38 @@ class InvoiceRepository(
         return (
             self.session.query(
                 Invoice
+            )
+            .order_by(
+                Invoice.id.desc()
+            )
+            .all()
+        )
+
+    def search_invoices(
+        self,
+        text,
+    ):
+        return (
+            self.session.query(
+                Invoice
+            )
+            .join(
+                Customer,
+                Invoice.customer_id
+                == Customer.id,
+            )
+            .filter(
+                or_(
+                    Invoice.invoice_number.ilike(
+                        f"%{text}%"
+                    ),
+                    Customer.customer_name.ilike(
+                        f"%{text}%"
+                    ),
+                    Customer.phone.ilike(
+                        f"%{text}%"
+                    ),
+                )
             )
             .order_by(
                 Invoice.id.desc()
@@ -50,6 +88,19 @@ class InvoiceRepository(
             .filter(
                 Invoice.id
                 == invoice_id
+            )
+            .first()
+        )
+
+    def get_latest_invoice(
+        self,
+    ):
+        return (
+            self.session.query(
+                Invoice
+            )
+            .order_by(
+                Invoice.id.desc()
             )
             .first()
         )

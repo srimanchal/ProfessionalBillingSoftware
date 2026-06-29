@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QFormLayout,
     QLineEdit,
-    QPushButton
+    QPushButton,
 )
 
 
@@ -11,7 +11,7 @@ class ProductDialog(QDialog):
 
     def __init__(
         self,
-        product=None
+        product=None,
     ):
         super().__init__()
 
@@ -27,51 +27,93 @@ class ProductDialog(QDialog):
             "Product"
         )
 
-        self.resize(400, 250)
+        self.resize(
+            500,
+            350,
+        )
 
         layout = QVBoxLayout()
 
         form = QFormLayout()
 
         self.name = QLineEdit()
+
         self.sku = QLineEdit()
+
         self.price = QLineEdit()
+
         self.stock = QLineEdit()
+
+        self.gst = QLineEdit()
+
+        self.gst.setText(
+            "18"
+        )
+
+        self.name.setPlaceholderText(
+            "Product Name"
+        )
+
+        self.sku.setPlaceholderText(
+            "SKU"
+        )
+
+        self.price.setPlaceholderText(
+            "Selling Price"
+        )
+
+        self.stock.setPlaceholderText(
+            "Stock Quantity"
+        )
+
+        self.gst.setPlaceholderText(
+            "GST Percentage"
+        )
 
         form.addRow(
             "Product Name",
-            self.name
+            self.name,
         )
 
         form.addRow(
             "SKU",
-            self.sku
+            self.sku,
         )
 
         form.addRow(
             "Selling Price",
-            self.price
+            self.price,
         )
 
         form.addRow(
             "Stock Quantity",
-            self.stock
+            self.stock,
+        )
+
+        form.addRow(
+            "GST %",
+            self.gst,
         )
 
         self.save_button = QPushButton(
-            "Save"
+            "Save Product"
         )
 
         self.save_button.clicked.connect(
             self.accept
         )
 
-        layout.addLayout(form)
+        layout.addLayout(
+            form
+        )
+
         layout.addWidget(
             self.save_button
         )
 
-        self.setLayout(layout)
+        self.setLayout(
+            layout
+        )
 
     def load_product(self):
         self.name.setText(
@@ -97,3 +139,37 @@ class ProductDialog(QDialog):
                 or 0
             )
         )
+
+        self.gst.setText(
+            str(
+                self.product.gst_percentage
+                or 18
+            )
+        )
+
+    def get_data(self):
+        return {
+            "product_name":
+                self.name.text().strip(),
+
+            "sku":
+                self.sku.text().strip(),
+
+            "selling_price":
+                float(
+                    self.price.text()
+                    or 0
+                ),
+
+            "stock_quantity":
+                float(
+                    self.stock.text()
+                    or 0
+                ),
+
+            "gst_percentage":
+                float(
+                    self.gst.text()
+                    or 18
+                ),
+        }

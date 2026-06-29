@@ -4,89 +4,175 @@ from database.repositories.customer_repository import (
     CustomerRepository
 )
 
+from app.signals import app_signals
+
 
 class CustomerService:
 
-    def __init__(self):
-        self.db = SessionLocal()
-
-        self.repository = (
-            CustomerRepository(
-                self.db
-            )
-        )
-
     def get_customers(self):
-        return (
-            self.repository
-            .get_all_customers()
-        )
+        db = SessionLocal()
+
+        try:
+            repository = CustomerRepository(
+                db
+            )
+
+            return (
+                repository
+                .get_all_customers()
+            )
+
+        finally:
+            db.close()
 
     def search_customers(
         self,
         text,
     ):
-        return self.repository.search(
-            text
-        )
+        db = SessionLocal()
+
+        try:
+            repository = CustomerRepository(
+                db
+            )
+
+            return repository.search(
+                text
+            )
+
+        finally:
+            db.close()
 
     def add_customer(
         self,
         data,
     ):
-        customer = Customer(**data)
+        db = SessionLocal()
 
-        return self.repository.add(
-            customer
-        )
+        try:
+            repository = CustomerRepository(
+                db
+            )
+
+            customer = Customer(
+                **data
+            )
+
+            result = repository.add(
+                customer
+            )
+
+            app_signals.customer_changed.emit()
+            app_signals.dashboard_refresh.emit()
+
+            return result
+
+        finally:
+            db.close()
 
     def get_customer(
         self,
         customer_id,
     ):
-        return (
-            self.repository.get_by_id(
+        db = SessionLocal()
+
+        try:
+            repository = CustomerRepository(
+                db
+            )
+
+            return repository.get_by_id(
                 Customer,
                 customer_id,
             )
-        )
+
+        finally:
+            db.close()
+
+    def get_customer_by_phone(
+        self,
+        phone,
+    ):
+        db = SessionLocal()
+
+        try:
+            repository = CustomerRepository(
+                db
+            )
+
+            return (
+                repository.get_by_phone(
+                    phone
+                )
+            )
+
+        finally:
+            db.close()
 
     def update_customer(
         self,
         customer_id,
         data,
     ):
-        customer = (
-            self.get_customer(
-                customer_id
-            )
-        )
+        db = SessionLocal()
 
-        if not customer:
-            return None
-
-        for key, value in data.items():
-            setattr(
-                customer,
-                key,
-                value,
+        try:
+            repository = CustomerRepository(
+                db
             )
 
-        self.repository.update()
+            customer = (
+                repository.get_by_id(
+                    Customer,
+                    customer_id,
+                )
+            )
 
-        return customer
+            if not customer:
+                return None
+
+            for key, value in data.items():
+                setattr(
+                    customer,
+                    key,
+                    value,
+                )
+
+            repository.update()
+
+            app_signals.customer_changed.emit()
+            app_signals.dashboard_refresh.emit()
+
+            return customer
+
+        finally:
+            db.close()
 
     def delete_customer(
         self,
         customer_id,
     ):
-        customer = (
-            self.get_customer(
-                customer_id
-            )
-        )
+        db = SessionLocal()
 
-        if customer:
-            self.repository.delete(
-                customer
+        try:
+            repository = CustomerRepository(
+                db
             )
+
+            customer = (
+                repository.get_by_id(
+                    Customer,
+                    customer_id,
+                )
+            )
+
+            if customer:
+                repository.delete(
+                    customer
+                )
+
+                app_signals.customer_changed.emit()
+                app_signals.dashboard_refresh.emit()
+
+        finally:
+            db.close()

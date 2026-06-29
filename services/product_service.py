@@ -6,112 +6,161 @@ from database.repositories.product_repository import (
     ProductRepository
 )
 
+from app.signals import app_signals
+
 
 class ProductService:
 
-    def __init__(self):
-        self.db = SessionLocal()
-
-        self.repository = ProductRepository(
-            self.db
-        )
-
     def get_products(self):
-        return (
-            self.repository
-            .get_all_products()
-        )
+        db = SessionLocal()
+        try:
+            repository = ProductRepository(db)
+            return repository.get_all_products()
+        finally:
+            db.close()
 
     def search_products(
         self,
         text,
     ):
-        return self.repository.search(
-            text
-        )
+        db = SessionLocal()
+        try:
+            repository = ProductRepository(db)
+            return repository.search(text)
+        finally:
+            db.close()
 
     def add_product(
         self,
         data,
     ):
-        product = Product(**data)
+        db = SessionLocal()
+        try:
+            repository = ProductRepository(db)
 
-        return self.repository.add(
-            product
-        )
+            product = Product(**data)
+
+            result = repository.add(
+                product
+            )
+
+            app_signals.product_changed.emit()
+            app_signals.dashboard_refresh.emit()
+
+            return result
+        finally:
+            db.close()
 
     def get_product(
         self,
         product_id,
     ):
-        return self.repository.get_by_id(
-            Product,
-            product_id,
-        )
+        db = SessionLocal()
+        try:
+            repository = ProductRepository(db)
+
+            return repository.get_by_id(
+                Product,
+                product_id,
+            )
+        finally:
+            db.close()
 
     def update_product(
         self,
         product_id,
         data,
     ):
-        product = self.get_product(
-            product_id
-        )
+        db = SessionLocal()
+        try:
+            repository = ProductRepository(db)
 
-        if not product:
-            return None
-
-        for key, value in data.items():
-            setattr(
-                product,
-                key,
-                value,
+            product = repository.get_by_id(
+                Product,
+                product_id,
             )
 
-        self.repository.update()
+            if not product:
+                return None
 
-        return product
+            for key, value in data.items():
+                setattr(
+                    product,
+                    key,
+                    value,
+                )
+
+            repository.update()
+
+            app_signals.product_changed.emit()
+            app_signals.dashboard_refresh.emit()
+
+            return product
+        finally:
+            db.close()
 
     def delete_product(
         self,
         product_id,
     ):
-        product = self.get_product(
-            product_id
-        )
+        db = SessionLocal()
+        try:
+            repository = ProductRepository(db)
 
-        if product:
-            self.repository.delete(
-                product
+            product = repository.get_by_id(
+                Product,
+                product_id,
             )
+
+            if product:
+                repository.delete(
+                    product
+                )
+
+                app_signals.product_changed.emit()
+                app_signals.dashboard_refresh.emit()
+        finally:
+            db.close()
 
     def reduce_stock(
         self,
         product_id,
         quantity,
     ):
-        product = self.repository.get_by_id(
-            Product,
-            product_id,
-        )
+        db = SessionLocal()
 
-        if not product:
-            return
+        try:
+            repository = ProductRepository(db)
 
-        current_stock = Decimal(
-            str(
-                product.stock_quantity
-                or 0
+            product = repository.get_by_id(
+                Product,
+                product_id,
             )
-        )
 
-        quantity = Decimal(
-            str(quantity)
-        )
+            if not product:
+                return
 
-        product.stock_quantity = (
-            current_stock
-            - quantity
-        )
+            current_stock = Decimal(
+                str(
+                    product.stock_quantity
+                    or 0
+                )
+            )
 
-        self.repository.update()
+            quantity = Decimal(
+                str(quantity)
+            )
+
+            product.stock_quantity = (
+                current_stock
+                - quantity
+            )
+
+            repository.update()
+
+            app_signals.product_changed.emit()
+            app_signals.stock_changed.emit()
+            app_signals.dashboard_refresh.emit()
+
+        finally:
+            db.close()

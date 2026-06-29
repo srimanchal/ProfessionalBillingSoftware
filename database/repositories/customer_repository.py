@@ -1,3 +1,5 @@
+from sqlalchemy import or_
+
 from database.repositories.base_repository import (
     BaseRepository
 )
@@ -31,9 +33,31 @@ class CustomerRepository(
                 Customer
             )
             .filter(
-                Customer.customer_name.ilike(
-                    f"%{text}%"
+                or_(
+                    Customer.phone.ilike(
+                        f"%{text}%"
+                    ),
+                    Customer.customer_name.ilike(
+                        f"%{text}%"
+                    ),
                 )
             )
+            .order_by(
+                Customer.customer_name
+            )
             .all()
+        )
+
+    def get_by_phone(
+        self,
+        phone,
+    ):
+        return (
+            self.session.query(
+                Customer
+            )
+            .filter(
+                Customer.phone == phone
+            )
+            .first()
         )

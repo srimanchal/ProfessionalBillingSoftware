@@ -1,42 +1,36 @@
 #define MyAppName "Professional Billing Software"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0 Beta"
 #define MyAppPublisher "Srimanchal Sahoo"
-#define MyAppExeName "Professional Billing Software.exe"
+#define MyAppExeName "ProfessionalBillingSoftware.exe"
 
 [Setup]
-AppId={{7B9B5C1A-7F6C-4C7F-9A22-9B7F0D7A0001}
+AppId={{B8E5C1D0-2E4F-4E62-9D6B-123456789ABC}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
-
-OutputDir=Output
+DisableProgramGroupPage=yes
+OutputDir=output
 OutputBaseFilename=ProfessionalBillingSoftwareSetup
-
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
-
 SetupIconFile=..\assets\icons\app.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
-
-PrivilegesRequired=admin
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "Create Desktop Shortcut"; GroupDescription: "Additional Icons:"; Flags: unchecked
+Name: "desktopicon"; Description: "Create Desktop Shortcut"; GroupDescription: "Additional Tasks:"; Flags: unchecked
 
 [Files]
-Source: "..\dist\Professional Billing Software\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "..\dist\ProfessionalBillingSoftware\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-
-Name: "{autodesktop}\{#MyAppName}";Filename: "{app}\{#MyAppExeName}";Tasks: desktopicon
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}";Description: "Launch Professional Billing Software";Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent

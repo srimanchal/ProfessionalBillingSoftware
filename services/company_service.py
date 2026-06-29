@@ -1,23 +1,51 @@
 from database.session import SessionLocal
 from database.models.company import Company
 from database.repositories.company_repository import (
-    CompanyRepository
+CompanyRepository
 )
-
 
 class CompanyService:
 
-    def __init__(self):
-        self.db = SessionLocal()
-        self.repository = CompanyRepository(
-            self.db
+
+    def get_company(
+        self,
+    ):
+        db = SessionLocal()
+
+        try:
+            repository = (
+                CompanyRepository(
+                    db
+                )
+            )
+
+            return (
+                repository.get_company()
+            )
+
+        finally:
+            db.close()
+
+def create_company(
+    self,
+    data,
+):
+    db = SessionLocal()
+
+    try:
+        repository = (
+            CompanyRepository(
+                db
+            )
         )
 
-    def get_company(self):
-        return self.repository.get_company()
+        company = Company(
+            **data
+        )
 
-    def create_company(self, data):
+        return repository.add(
+            company
+        )
 
-        company = Company(**data)
-
-        return self.repository.add(company)
+    finally:
+        db.close()

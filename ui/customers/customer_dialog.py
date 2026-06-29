@@ -3,7 +3,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QFormLayout,
     QLineEdit,
-    QPushButton
+    QPushButton,
+    QTextEdit,
 )
 
 
@@ -11,7 +12,7 @@ class CustomerDialog(QDialog):
 
     def __init__(
         self,
-        customer=None
+        customer=None,
     ):
         super().__init__()
 
@@ -27,7 +28,10 @@ class CustomerDialog(QDialog):
             "Customer"
         )
 
-        self.resize(500, 350)
+        self.resize(
+            600,
+            500,
+        )
 
         layout = QVBoxLayout()
 
@@ -38,30 +42,70 @@ class CustomerDialog(QDialog):
         self.email = QLineEdit()
         self.gst = QLineEdit()
         self.city = QLineEdit()
+        self.state = QLineEdit()
+        self.address = QTextEdit()
+
+        self.name.setPlaceholderText(
+            "Customer Name"
+        )
+
+        self.phone.setPlaceholderText(
+            "Phone Number"
+        )
+
+        self.email.setPlaceholderText(
+            "Email Address"
+        )
+
+        self.gst.setPlaceholderText(
+            "GST Number"
+        )
+
+        self.city.setPlaceholderText(
+            "City"
+        )
+
+        self.state.setPlaceholderText(
+            "State"
+        )
+
+        self.address.setPlaceholderText(
+            "Address"
+        )
 
         form.addRow(
             "Customer Name",
-            self.name
+            self.name,
         )
 
         form.addRow(
             "Phone",
-            self.phone
+            self.phone,
         )
 
         form.addRow(
             "Email",
-            self.email
+            self.email,
         )
 
         form.addRow(
             "GST Number",
-            self.gst
+            self.gst,
         )
 
         form.addRow(
             "City",
-            self.city
+            self.city,
+        )
+
+        form.addRow(
+            "State",
+            self.state,
+        )
+
+        form.addRow(
+            "Address",
+            self.address,
         )
 
         self.save_button = QPushButton(
@@ -69,15 +113,20 @@ class CustomerDialog(QDialog):
         )
 
         self.save_button.clicked.connect(
-            self.accept
+            self.validate_and_save
         )
 
-        layout.addLayout(form)
+        layout.addLayout(
+            form
+        )
+
         layout.addWidget(
             self.save_button
         )
 
-        self.setLayout(layout)
+        self.setLayout(
+            layout
+        )
 
     def load_customer(self):
         self.name.setText(
@@ -104,3 +153,51 @@ class CustomerDialog(QDialog):
             self.customer.city
             or ""
         )
+
+        self.state.setText(
+            getattr(
+                self.customer,
+                "state",
+                ""
+            )
+            or ""
+        )
+
+        self.address.setPlainText(
+            getattr(
+                self.customer,
+                "address",
+                ""
+            )
+            or ""
+        )
+
+    def validate_and_save(self):
+        if not self.name.text().strip():
+            return
+
+        self.accept()
+
+    def get_data(self):
+        return {
+            "customer_name":
+                self.name.text().strip(),
+
+            "phone":
+                self.phone.text().strip(),
+
+            "email":
+                self.email.text().strip(),
+
+            "gst_number":
+                self.gst.text().strip(),
+
+            "city":
+                self.city.text().strip(),
+
+            "state":
+                self.state.text().strip(),
+
+            "address":
+                self.address.toPlainText().strip(),
+        }
